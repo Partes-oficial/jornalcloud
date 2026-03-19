@@ -179,6 +179,42 @@ tbody tr:hover{background:rgba(255,255,255,.02)}
 .prog-fill{height:5px;border-radius:4px}
 </style>
 </head>
+<script type="module">
+// ── Firebase para panel admin ──
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+const _fbCfg = {
+  apiKey: "AIzaSyDHmRcBkgrpaueRgfsdpwiFD831e8zPvaU",
+  authDomain: "jornalcloud.firebaseapp.com",
+  projectId: "jornalcloud",
+  storageBucket: "jornalcloud.firebasestorage.app",
+  messagingSenderId: "441328350466",
+  appId: "1:441328350466:web:3e727ffe34c29c72dd3e1b"
+};
+const _app = initializeApp(_fbCfg);
+const _db  = getFirestore(_app);
+window._db = _db;
+window._fsCol = collection;
+window._fsGetDocs = getDocs;
+window._fsDoc = doc;
+window._fsSetDoc = setDoc;
+window._fsDeleteDoc = deleteDoc;
+
+// Cargar usuarios desde Firestore al arrancar
+async function loadUsersFromFirestore(){
+  try{
+    const snap = await getDocs(collection(_db, 'jc_accounts'));
+    const users = [];
+    snap.forEach(d => users.push({...d.data(), _fsId: d.id}));
+    localStorage.setItem('jc_users', JSON.stringify(users));
+    console.log('✅ Usuarios cargados de Firestore:', users.length);
+    if(typeof refreshAll === 'function') refreshAll();
+  }catch(e){ console.warn('Error cargando usuarios de Firestore:', e.message); }
+}
+window.loadUsersFromFirestore = loadUsersFromFirestore;
+window.addEventListener('DOMContentLoaded', ()=>setTimeout(loadUsersFromFirestore, 1000));
+</script>
 <body>
 
 <!-- ════════ LOGIN ADMIN ════════ -->
@@ -600,7 +636,18 @@ function doAdminLogout(){
 function getUsers(){
   return JSON.parse(localStorage.getItem('jc_users')||'[]');
 }
-function saveUsers(list){ localStorage.setItem('jc_users', JSON.stringify(list)); }
+function saveUsers(list){ 
+  localStorage.setItem('jc_users', JSON.stringify(list));
+  // Sincronizar con Firestore si está disponible
+  if(window._db && window._fsSetDoc && window._fsDoc){
+    list.forEach(u=>{
+      if(!u.email) return;
+      const key = u.email.replace(/\./g,'_');
+      window._fsSetDoc(window._fsDoc(window._db,'jc_accounts',key), u, {merge:true})
+        .catch(e=>console.warn('Error sync Firestore:', e.message));
+    });
+  }
+}
 
 function getUserData(email){
   const raw = localStorage.getItem('jc_'+email);
