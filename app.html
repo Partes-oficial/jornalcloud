@@ -940,6 +940,14 @@ function switchTab(t){
   document.getElementById('login-admin-form').classList.toggle('hidden',t!=='login-admin');
   document.getElementById('login-user-form').classList.toggle('hidden',t!=='login-user');
   document.getElementById('register-form').classList.toggle('hidden',t!=='register');
+  // Al abrir la pestaña Trabajador, precargar el correo del admin guardado en este dispositivo
+  if(t==='login-user'){
+    const saved = localStorage.getItem('jc_last_admin_email');
+    if(saved){
+      const campo = document.getElementById('lu-admin-email');
+      if(campo && !campo.value) campo.value = saved;
+    }
+  }
 }
 
 async function doLogin(){
@@ -957,6 +965,8 @@ async function doLogin(){
       if(u.estado==='suspendido'){ toast('Tu cuenta está suspendida.','error'); return; }
       // Asegurar que tiene rol admin
       if(!u.rol || u.rol==='user') u.rol='admin';
+      // Guardar correo del admin en este dispositivo para precargarlo en login de trabajador
+      localStorage.setItem('jc_last_admin_email', e);
       S.user=u; S.user._adminEmail=e; await enterApp();
     } else {
       toast('No existe cuenta con ese correo. Regístrate primero.','error');
@@ -2223,6 +2233,15 @@ function keepAlive(){
 // Primer ping al cargar, luego cada 10 min
 setTimeout(keepAlive, 3000);
 setInterval(keepAlive, 10 * 60 * 1000);
+
+// Precargar correo del admin guardado en el campo del trabajador
+(function(){
+  const saved = localStorage.getItem('jc_last_admin_email');
+  if(saved){
+    const campo = document.getElementById('lu-admin-email');
+    if(campo) campo.value = saved;
+  }
+})();
 
 async function enviarEmail(){
   const para1  = document.getElementById('em-para1').value.trim();
