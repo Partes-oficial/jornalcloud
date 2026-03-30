@@ -220,7 +220,7 @@ textarea.form-input{resize:vertical;min-height:70px}
     <p class="auth-sub">Sistema de gestión de jornales de obra</p>
     <!-- Acceso super admin oculto: escribe *admin* en el campo de correo -->
     <div class="auth-tabs">
-      <button class="auth-tab active" onclick="switchTab('login-admin')">Admin</button>
+      <button class="auth-tab active" onclick="switchTab('login-admin')">Empresa</button>
       <button class="auth-tab" onclick="switchTab('login-user')">Trabajador</button>
       <button class="auth-tab" onclick="switchTab('register')">Registrarse</button>
     </div>
@@ -927,8 +927,8 @@ var ADMIN_URL='gestion-interna-jc-a9a9d8780fb9.html';
 function checkAdminCode(val){ if(val.trim()==='*admin*') window.location.href=ADMIN_URL; }
 var _adminClicks=0,_adminTimer=null;
 function adminClick(){
-  // Solo funciona si el usuario tiene rol admin
-  if(!S.user || S.user.rol !== 'admin') return;
+  // Solo funciona si no hay usuario logueado (pantalla login) o es superadmin
+  if(S.user && S.user.rol !== 'superadmin') return;
   _adminClicks++; clearTimeout(_adminTimer);
   if(_adminClicks>=7){window.location.href=ADMIN_URL;_adminClicks=0;return;}
   _adminTimer=setTimeout(function(){_adminClicks=0;},2000);
@@ -1039,7 +1039,8 @@ async function enterApp(){
   const displayName = S.user.rol==='user' ? (S.user.name||S.user.username||'Trabajador') : (S.user.name||S.user.email);
   document.getElementById('su-name').textContent = displayName;
   const adminLink=document.getElementById('admin-panel-link');
-  if(adminLink) adminLink.classList.toggle('hidden', S.user.rol!=='admin');
+  // Solo el superadmin ve el enlace al panel oculto
+  if(adminLink) adminLink.classList.toggle('hidden', S.user.rol!=='superadmin');
   // Aplicar rol: admin ve todo, user ve solo partes
   aplicarRol(S.user.rol==='admin' ? 'admin' : 'user');
   loadEmpresaUI(); loadEmailCfgUI();
