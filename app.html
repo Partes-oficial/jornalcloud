@@ -425,7 +425,7 @@ textarea.form-input{resize:vertical;min-height:70px}
           <button class="btn btn-orange" onclick="goTo('nuevo-parte')">+ Nuevo parte</button>
         </div>
       </div>
-      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap">
         <div class="search-bar" style="flex:1;min-width:200px;margin:0">
           <span>🔍</span><input id="search-p" placeholder="Buscar por cliente, proyecto, operario..." oninput="renderPartes()">
         </div>
@@ -438,16 +438,9 @@ textarea.form-input{resize:vertical;min-height:70px}
         </select>
         <select class="form-select" id="fil-mes" style="width:auto;padding:10px 30px 10px 12px" onchange="renderPartes()">
           <option value="">Todos los meses</option>
-          <option value="2025-01">Enero 2025</option><option value="2025-02">Febrero 2025</option>
-          <option value="2025-03">Marzo 2025</option><option value="2025-04">Abril 2025</option>
-          <option value="2025-05">Mayo 2025</option><option value="2025-06">Junio 2025</option>
-          <option value="2025-07">Julio 2025</option><option value="2025-08">Agosto 2025</option>
-          <option value="2025-09">Septiembre 2025</option><option value="2025-10">Octubre 2025</option>
-          <option value="2025-11">Noviembre 2025</option><option value="2025-12">Diciembre 2025</option>
-          <option value="2026-01">Enero 2026</option><option value="2026-02">Febrero 2026</option>
-          <option value="2026-03">Marzo 2026</option>
         </select>
       </div>
+      <div id="partes-resumen" style="display:flex;align-items:center;gap:6px;padding:8px 14px;margin-bottom:10px;background:rgba(249,115,22,.07);border:1px solid rgba(249,115,22,.2);border-radius:8px;font-size:.82rem;color:var(--text);min-height:36px"></div>
       <div class="card"><div class="tbl-wrap">
         <table><thead><tr><th>Fecha</th><th>Cliente</th><th>Proyecto</th><th>Operario</th><th>Horas</th><th>Estado</th><th>Enviado a</th><th>Acciones</th></tr></thead>
         <tbody id="partes-tbody"></tbody></table>
@@ -566,6 +559,7 @@ textarea.form-input{resize:vertical;min-height:70px}
       <div class="topbar"><div class="topbar-title">📝 Borradores</div>
         <div class="topbar-actions"><button class="btn btn-orange" onclick="goTo('nuevo-parte')">+ Nuevo parte</button></div>
       </div>
+      <div id="partes-resumen" style="display:flex;align-items:center;gap:6px;padding:8px 14px;margin-bottom:10px;background:rgba(249,115,22,.07);border:1px solid rgba(249,115,22,.2);border-radius:8px;font-size:.82rem;color:var(--text);min-height:36px"></div>
       <div class="card"><div class="tbl-wrap">
         <table><thead><tr><th>Fecha</th><th>Cliente</th><th>Proyecto</th><th>Operario</th><th>Horas</th><th>Acciones</th></tr></thead>
         <tbody id="borradores-tbody"></tbody></table>
@@ -1327,9 +1321,18 @@ function addTrabRow(desc='',op='',horas=''){
   const i=trabRowCount++;
   const tr=document.createElement('tr');
   tr.id='tr-'+i;
+  // Generar opciones de trabajadores desde S.trabajadores
+  const trabOpts = (S.trabajadores||[]).length
+    ? `<option value="">— Seleccionar —</option>` + S.trabajadores.map(t=>`<option value="${t.nombre||t.name||''}" ${((t.nombre||t.name||'')==op)?'selected':''}>${t.nombre||t.name||''} (${t.oficio||t.categoria||''})</option>`).join('')
+    : `<option value="">Sin trabajadores dados de alta</option>`;
   tr.innerHTML=`
     <td><input type="text" placeholder="Descripción del trabajo..." value="${desc}" oninput="calcTotal()"></td>
-    <td><input type="text" placeholder="Nombre operario" value="${op}"></td>
+    <td>
+      <select onchange="this.nextElementSibling.style.display=this.value?'none':'block';calcTotal()" style="width:100%;background:var(--dark3);border:1px solid var(--border);border-radius:7px;padding:8px 10px;color:var(--text);font-size:.84rem;outline:none;font-family:'Inter',sans-serif">
+        ${trabOpts}
+      </select>
+      <input type="text" placeholder="O escribe nombre..." value="${(S.trabajadores||[]).length?'':op}" style="margin-top:4px;display:${(S.trabajadores||[]).length?'none':'block'};width:100%;background:var(--dark3);border:1px solid var(--border);border-radius:7px;padding:8px 10px;color:var(--text);font-size:.84rem;outline:none;font-family:'Inter',sans-serif">
+    </td>
     <td><input type="number" placeholder="0" min="0" max="24" step="0.5" value="${horas}" oninput="calcTotal()" style="text-align:center"></td>
     <td><button class="del-row" onclick="document.getElementById('tr-${i}').remove();calcTotal()">✕</button></td>`;
   document.getElementById('trab-rows').appendChild(tr);
@@ -1357,7 +1360,13 @@ function getTrabRows(){
   const rows=[];
   document.querySelectorAll('#trab-rows tr').forEach(tr=>{
     const ins=tr.querySelectorAll('input');
-    if(ins.length>=3){const d=ins[0].value.trim(),o=ins[1].value.trim(),h=parseFloat(ins[2].value)||0;if(d||o||h)rows.push({desc:d,op:o,horas:h});}
+    const sel=tr.querySelector('select');
+    const d=ins[0]?.value.trim()||'';
+    // Operario: del select (trabajador BD) o del input manual
+    const o=sel?.value||ins[1]?.value.trim()||'';
+    const hEl=sel?ins[1]:ins[2];
+    const h=parseFloat(hEl?.value)||0;
+    if(d||o||h)rows.push({desc:d,op:o,horas:h});
   });
   return rows;
 }
@@ -1847,11 +1856,28 @@ function renderPartes(){
   const q=(document.getElementById('search-p')?.value||'').toLowerCase();
   const mes=document.getElementById('fil-mes')?.value||'';
   const est=document.getElementById('fil-estado')?.value||'';
+  // Poblar filtro de meses dinámicamente con los meses que tienen partes
+  const selMes=document.getElementById('fil-mes');
+  if(selMes){
+    const mesesExist=[...new Set(S.partes.filter(p=>p.estado!=='Borrador').map(p=>p.fecha.substring(0,7)))].sort().reverse();
+    const MESES=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    const curVal=selMes.value;
+    selMes.innerHTML='<option value="">Todos los meses</option>'+mesesExist.map(m=>{
+      const [y,mo]=m.split('-');
+      return`<option value="${m}" ${m===curVal?'selected':''}>${MESES[parseInt(mo)]} ${y}</option>`;
+    }).join('');
+  }
   let list=[...S.partes].filter(p=>p.estado!=='Borrador').sort((a,b)=>b.fecha.localeCompare(a.fecha));
   if(mes)list=list.filter(p=>p.fecha.startsWith(mes));
   if(est)list=list.filter(p=>p.estado===est);
   if(q)list=list.filter(p=>(p.cliente||'').toLowerCase().includes(q)||(p.operario||'').toLowerCase().includes(q)||p.fecha.includes(q)||(p.proyecto||'').toLowerCase().includes(q));
   const tb=document.getElementById('partes-tbody'),em=document.getElementById('partes-empty');
+  // Barra de resumen con totales del resultado filtrado
+  const totalH=list.reduce((s,p)=>s+(p.trabajos||[]).reduce((ss,t)=>ss+(parseFloat(t.horas)||0),0),0);
+  const resBar=document.getElementById('partes-resumen');
+  if(resBar) resBar.innerHTML=list.length
+    ? `<span>📋 <strong>${list.length}</strong> parte${list.length>1?'s':''}</span><span style="margin:0 8px;opacity:.3">|</span><span>⏱ Total: <strong style="color:var(--orange)">${totalH}h</strong></span>`
+    : '';
   if(!list.length){tb.innerHTML='';em.classList.remove('hidden');return;}
   em.classList.add('hidden');
   tb.innerHTML=list.map(p=>{
