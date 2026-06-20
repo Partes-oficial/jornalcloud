@@ -335,7 +335,10 @@ textarea.form-input{resize:vertical;min-height:70px}
             <div class="form-row c2">
               <div class="form-group" style="margin:0">
                 <label class="form-label">PROYECTO / OBRA</label>
-                <input type="text" class="form-input" id="p-proyecto" placeholder="Escribe el nombre de la obra" list="dl-proyectos" autocomplete="off">
+                <select class="form-select" id="p-obra-sel" onchange="onObraSelChange(this.value)">
+                  <option value="">— Seleccionar obra —</option>
+                </select>
+                <input type="text" class="form-input" id="p-proyecto" placeholder="O escribe el nombre de la obra" list="dl-proyectos" autocomplete="off" style="margin-top:6px;display:none">
               </div>
               <div class="form-group" style="margin:0">
                 <label class="form-label">FECHA</label>
@@ -345,11 +348,11 @@ textarea.form-input{resize:vertical;min-height:70px}
             <div class="form-row c2" style="margin-top:12px">
               <div class="form-group" style="margin:0">
                 <label class="form-label">CLIENTE</label>
-                <input type="text" class="form-input" id="p-cliente" placeholder="Escribe el nombre del cliente" list="dl-clientes" autocomplete="off">
+                <input type="text" class="form-input" id="p-cliente" placeholder="Se rellena automático" list="dl-clientes" autocomplete="off">
               </div>
               <div class="form-group" style="margin:0">
                 <label class="form-label">REFERENCIA</label>
-                <input type="text" class="form-input" id="p-referencia" placeholder="Ej: REF-001" list="dl-referencias" autocomplete="off">
+                <input type="text" class="form-input" id="p-referencia" placeholder="Se rellena automático" list="dl-referencias" autocomplete="off">
               </div>
             </div>
           </div>
@@ -425,7 +428,7 @@ textarea.form-input{resize:vertical;min-height:70px}
           <button class="btn btn-orange" onclick="goTo('nuevo-parte')">+ Nuevo parte</button>
         </div>
       </div>
-      <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
         <div class="search-bar" style="flex:1;min-width:200px;margin:0">
           <span>🔍</span><input id="search-p" placeholder="Buscar por cliente, proyecto, operario..." oninput="renderPartes()">
         </div>
@@ -438,9 +441,16 @@ textarea.form-input{resize:vertical;min-height:70px}
         </select>
         <select class="form-select" id="fil-mes" style="width:auto;padding:10px 30px 10px 12px" onchange="renderPartes()">
           <option value="">Todos los meses</option>
+          <option value="2025-01">Enero 2025</option><option value="2025-02">Febrero 2025</option>
+          <option value="2025-03">Marzo 2025</option><option value="2025-04">Abril 2025</option>
+          <option value="2025-05">Mayo 2025</option><option value="2025-06">Junio 2025</option>
+          <option value="2025-07">Julio 2025</option><option value="2025-08">Agosto 2025</option>
+          <option value="2025-09">Septiembre 2025</option><option value="2025-10">Octubre 2025</option>
+          <option value="2025-11">Noviembre 2025</option><option value="2025-12">Diciembre 2025</option>
+          <option value="2026-01">Enero 2026</option><option value="2026-02">Febrero 2026</option>
+          <option value="2026-03">Marzo 2026</option>
         </select>
       </div>
-      <div id="partes-resumen" style="display:flex;align-items:center;gap:6px;padding:8px 14px;margin-bottom:10px;background:rgba(249,115,22,.07);border:1px solid rgba(249,115,22,.2);border-radius:8px;font-size:.82rem;color:var(--text);min-height:36px"></div>
       <div class="card"><div class="tbl-wrap">
         <table><thead><tr><th>Fecha</th><th>Cliente</th><th>Proyecto</th><th>Operario</th><th>Horas</th><th>Estado</th><th>Enviado a</th><th>Acciones</th></tr></thead>
         <tbody id="partes-tbody"></tbody></table>
@@ -464,7 +474,7 @@ textarea.form-input{resize:vertical;min-height:70px}
     <!-- ── PROYECTOS ── -->
     <div id="page-proyectos" class="page">
       <div class="topbar"><div class="topbar-title">🏗️ Proyectos / Obras</div>
-        <div class="topbar-actions"><button class="btn btn-orange" onclick="openModal('modal-proy')">+ Nueva obra</button></div>
+        <div class="topbar-actions"><button class="btn btn-orange" onclick="openModalProy()">+ Nueva obra</button></div>
       </div>
       <div id="proy-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px"></div>
       <div id="proy-empty" class="empty-state hidden"><div class="empty-icon">🏗️</div><div class="empty-title">Sin proyectos</div></div>
@@ -559,7 +569,6 @@ textarea.form-input{resize:vertical;min-height:70px}
       <div class="topbar"><div class="topbar-title">📝 Borradores</div>
         <div class="topbar-actions"><button class="btn btn-orange" onclick="goTo('nuevo-parte')">+ Nuevo parte</button></div>
       </div>
-      <div id="partes-resumen" style="display:flex;align-items:center;gap:6px;padding:8px 14px;margin-bottom:10px;background:rgba(249,115,22,.07);border:1px solid rgba(249,115,22,.2);border-radius:8px;font-size:.82rem;color:var(--text);min-height:36px"></div>
       <div class="card"><div class="tbl-wrap">
         <table><thead><tr><th>Fecha</th><th>Cliente</th><th>Proyecto</th><th>Operario</th><th>Horas</th><th>Acciones</th></tr></thead>
         <tbody id="borradores-tbody"></tbody></table>
@@ -704,10 +713,21 @@ textarea.form-input{resize:vertical;min-height:70px}
       <div class="form-group"><label class="form-label">NOMBRE DE LA OBRA</label><input type="text" class="form-input" id="mp-nombre" placeholder="Residencial Los Pinos"></div>
       <div class="form-row c2">
         <div class="form-group" style="margin:0"><label class="form-label">CÓDIGO</label><input type="text" class="form-input" id="mp-codigo" placeholder="I-1990325"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">CLIENTE</label><input type="text" class="form-input" id="mp-cliente" placeholder="Nombre del cliente"></div>
+      </div>
+      <div class="form-row c2" style="margin-top:12px">
         <div class="form-group" style="margin:0"><label class="form-label">ESTADO</label><select class="form-select" id="mp-estado"><option value="Activo">Activo</option><option value="Pausado">Pausado</option><option value="Finalizado">Finalizado</option></select></div>
+        <div class="form-group" style="margin:0"><label class="form-label">REFERENCIA</label><input type="text" class="form-input" id="mp-referencia" placeholder="REF-001"></div>
       </div>
       <div class="form-group" style="margin-top:12px"><label class="form-label">UBICACIÓN</label><input type="text" class="form-input" id="mp-ubicacion" placeholder="Av. Principal, Ciudad"></div>
       <div class="form-group"><label class="form-label">DESCRIPCIÓN</label><textarea class="form-input" id="mp-desc" placeholder="Descripción breve..."></textarea></div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">OPERARIOS ASIGNADOS <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(selecciona quién puede hacer partes de esta obra)</span></label>
+        <div id="mp-operarios-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;min-height:36px;padding:8px;background:var(--dark3);border-radius:8px;border:1px solid var(--border)">
+          <span style="font-size:.78rem;color:var(--muted);align-self:center">Primero da de alta trabajadores en la sección Trabajadores</span>
+        </div>
+        <div style="font-size:.7rem;color:var(--muted);margin-top:4px">Si no seleccionas ninguno, todos los trabajadores pueden hacer partes de esta obra.</div>
+      </div>
     </div>
     <div class="modal-ft"><button class="btn btn-ghost" onclick="closeModal('modal-proy')">Cancelar</button><button class="btn btn-orange" onclick="saveProy()">Guardar</button></div>
   </div>
@@ -1191,7 +1211,7 @@ function goTo(p){
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
   document.querySelectorAll('.nav-item').forEach(el=>{if(el.getAttribute('onclick')&&el.getAttribute('onclick').includes(p))el.classList.add('active');});
-  if(p==='nuevo-parte'){resetParteForm();reinitFirmas();}
+  if(p==='nuevo-parte'){ fillObraSelector();resetParteForm();reinitFirmas();}
   if(p==='partes') renderPartes();
   if(p==='borradores') renderBorradores();
   if(p==='envios') renderEnvios();
@@ -1321,18 +1341,9 @@ function addTrabRow(desc='',op='',horas=''){
   const i=trabRowCount++;
   const tr=document.createElement('tr');
   tr.id='tr-'+i;
-  // Generar opciones de trabajadores desde S.trabajadores
-  const trabOpts = (S.trabajadores||[]).length
-    ? `<option value="">— Seleccionar —</option>` + S.trabajadores.map(t=>`<option value="${t.nombre||t.name||''}" ${((t.nombre||t.name||'')==op)?'selected':''}>${t.nombre||t.name||''} (${t.oficio||t.categoria||''})</option>`).join('')
-    : `<option value="">Sin trabajadores dados de alta</option>`;
   tr.innerHTML=`
     <td><input type="text" placeholder="Descripción del trabajo..." value="${desc}" oninput="calcTotal()"></td>
-    <td>
-      <select onchange="this.nextElementSibling.style.display=this.value?'none':'block';calcTotal()" style="width:100%;background:var(--dark3);border:1px solid var(--border);border-radius:7px;padding:8px 10px;color:var(--text);font-size:.84rem;outline:none;font-family:'Inter',sans-serif">
-        ${trabOpts}
-      </select>
-      <input type="text" placeholder="O escribe nombre..." value="${(S.trabajadores||[]).length?'':op}" style="margin-top:4px;display:${(S.trabajadores||[]).length?'none':'block'};width:100%;background:var(--dark3);border:1px solid var(--border);border-radius:7px;padding:8px 10px;color:var(--text);font-size:.84rem;outline:none;font-family:'Inter',sans-serif">
-    </td>
+    <td><input type="text" placeholder="Nombre operario" value="${op}"></td>
     <td><input type="number" placeholder="0" min="0" max="24" step="0.5" value="${horas}" oninput="calcTotal()" style="text-align:center"></td>
     <td><button class="del-row" onclick="document.getElementById('tr-${i}').remove();calcTotal()">✕</button></td>`;
   document.getElementById('trab-rows').appendChild(tr);
@@ -1360,13 +1371,7 @@ function getTrabRows(){
   const rows=[];
   document.querySelectorAll('#trab-rows tr').forEach(tr=>{
     const ins=tr.querySelectorAll('input');
-    const sel=tr.querySelector('select');
-    const d=ins[0]?.value.trim()||'';
-    // Operario: del select (trabajador BD) o del input manual
-    const o=sel?.value||ins[1]?.value.trim()||'';
-    const hEl=sel?ins[1]:ins[2];
-    const h=parseFloat(hEl?.value)||0;
-    if(d||o||h)rows.push({desc:d,op:o,horas:h});
+    if(ins.length>=3){const d=ins[0].value.trim(),o=ins[1].value.trim(),h=parseFloat(ins[2].value)||0;if(d||o||h)rows.push({desc:d,op:o,horas:h});}
   });
   return rows;
 }
@@ -1388,6 +1393,7 @@ function resetParteForm(){
   calcTotal();
   clearCanvas('canvas-cliente'); clearCanvas('canvas-encargado');
   fillDataLists();
+  fillObraSelector();
   // Limpiar ID de edición
   window._editParteId = null;
   document.querySelector('#page-nuevo-parte .topbar-title') && 
@@ -1488,6 +1494,88 @@ function guardarEdicionParte(){
   toast('Parte actualizado ✓','success');
 }
 
+
+function onObraSelChange(obraId){
+  const inp=document.getElementById('p-proyecto');
+  if(!obraId){
+    // Sin obra guardada: mostrar input libre
+    if(inp) inp.style.display='';
+    document.getElementById('p-cliente').value='';
+    document.getElementById('p-referencia').value='';
+    // Restaurar todos los operarios
+    if(document.getElementById('trab-rows')) {
+      document.getElementById('trab-rows').innerHTML='';
+      trabRowCount=0;
+      addTrabRow();
+    }
+    return;
+  }
+  if(inp) inp.style.display='none';
+  const obra=S.proyectos.find(p=>p.id===obraId);
+  if(!obra) return;
+  // Autorrellenar proyecto en el campo hidden (para compatibilidad)
+  if(inp) inp.value=obra.nombre;
+  // Autorrellenar cliente y referencia
+  if(obra.cliente) document.getElementById('p-cliente').value=obra.cliente;
+  if(obra.referencia) document.getElementById('p-referencia').value=obra.referencia;
+  // Filtrar operarios asignados a esta obra
+  const trabRows=document.getElementById('trab-rows');
+  if(trabRows){
+    trabRows.innerHTML='';
+    trabRowCount=0;
+    if(obra.operarios&&obra.operarios.length){
+      // Solo los operarios asignados
+      obra.operarios.forEach(opId=>{
+        const t=S.trabajadores.find(x=>String(x.id||x.nombre||x.name)===String(opId));
+        if(t) addTrabRow('',t.nombre||t.name||'','' );
+      });
+    } else {
+      addTrabRow();
+    }
+  }
+}
+
+function fillObraSelector(){
+  const sel=document.getElementById('p-obra-sel');
+  if(!sel) return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— Seleccionar obra —</option>';
+  const esAdmin=(S.user?.rol==='admin'||S.user?.rol==='superadmin'||S.user?.id==='demo');
+  let activas=S.proyectos.filter(p=>p.estado!=='Finalizado');
+  if(!esAdmin){
+    // USER: solo ve las obras donde está asignado por el admin
+    const miId=String(S.user?.id||S.user?.username||S.user?.name||'');
+    const miNombre=String(S.user?.name||S.user?.username||'').toLowerCase();
+    activas=activas.filter(p=>{
+      if(!p.operarios||!p.operarios.length) return true; // sin restricción = todos pueden
+      return p.operarios.some(opId=>{
+        // Comparar por ID o por nombre del trabajador
+        if(String(opId)===miId) return true;
+        const t=S.trabajadores.find(x=>String(x.id||x.nombre||x.name)===String(opId));
+        return t&&(t.nombre||t.name||'').toLowerCase()===miNombre;
+      });
+    });
+  }
+  const inp=document.getElementById('p-proyecto');
+  if(!activas.length){
+    if(esAdmin){
+      sel.innerHTML+='<option value="" disabled>Sin obras dadas de alta</option>';
+    } else {
+      sel.innerHTML+='<option value="" disabled>No tienes obras asignadas</option>';
+    }
+    if(inp) inp.style.display= esAdmin ? '' : 'none';
+  } else {
+    activas.forEach(p=>{
+      sel.innerHTML+=`<option value="${p.id}" ${p.id===cur?'selected':''}>${p.nombre}${p.codigo?' ['+p.codigo+']':''}${p.cliente?' — '+p.cliente:''}</option>`;
+    });
+    if(inp) inp.style.display='none';
+    if(activas.length===1){
+      sel.value=activas[0].id;
+      onObraSelChange(activas[0].id);
+    }
+  }
+}
+
 function fillProySelect(){ fillDataLists(); } // compatibilidad
 
 function fillDataLists(){
@@ -1531,7 +1619,11 @@ function fillDataLists(){
 function saveParte(generarPDF=false, esBorrador=false){
   const fecha=document.getElementById('p-fecha').value;
   const cliente=document.getElementById('p-cliente').value.trim();
-  const proyecto=document.getElementById('p-proyecto').value.trim();
+  // Obtener proyecto del selector o del input libre
+  const obraSelId=document.getElementById('p-obra-sel')?.value||'';
+  const obraObj=obraSelId?S.proyectos.find(p=>p.id===obraSelId):null;
+  const proyecto=obraObj?obraObj.nombre:(document.getElementById('p-proyecto')?.value.trim()||'');
+  const proyectoId=obraSelId||'';
   const referencia=document.getElementById('p-referencia').value.trim();
   const notas=document.getElementById('p-notas').value.trim();
   const trabajos=getTrabRows();
@@ -1545,7 +1637,7 @@ function saveParte(generarPDF=false, esBorrador=false){
 
   const parte={
     id: window._editParteId || uid(),
-    fecha, cliente, proyecto, operario, referencia, notas,
+    fecha, cliente, proyecto, proyectoId, operario, referencia, notas,
     trabajos, materiales,
     firmaCliente: getCanvasDataURL('canvas-cliente'),
     firmaEncargado: getCanvasDataURL('canvas-encargado'),
@@ -1856,28 +1948,11 @@ function renderPartes(){
   const q=(document.getElementById('search-p')?.value||'').toLowerCase();
   const mes=document.getElementById('fil-mes')?.value||'';
   const est=document.getElementById('fil-estado')?.value||'';
-  // Poblar filtro de meses dinámicamente con los meses que tienen partes
-  const selMes=document.getElementById('fil-mes');
-  if(selMes){
-    const mesesExist=[...new Set(S.partes.filter(p=>p.estado!=='Borrador').map(p=>p.fecha.substring(0,7)))].sort().reverse();
-    const MESES=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    const curVal=selMes.value;
-    selMes.innerHTML='<option value="">Todos los meses</option>'+mesesExist.map(m=>{
-      const [y,mo]=m.split('-');
-      return`<option value="${m}" ${m===curVal?'selected':''}>${MESES[parseInt(mo)]} ${y}</option>`;
-    }).join('');
-  }
   let list=[...S.partes].filter(p=>p.estado!=='Borrador').sort((a,b)=>b.fecha.localeCompare(a.fecha));
   if(mes)list=list.filter(p=>p.fecha.startsWith(mes));
   if(est)list=list.filter(p=>p.estado===est);
   if(q)list=list.filter(p=>(p.cliente||'').toLowerCase().includes(q)||(p.operario||'').toLowerCase().includes(q)||p.fecha.includes(q)||(p.proyecto||'').toLowerCase().includes(q));
   const tb=document.getElementById('partes-tbody'),em=document.getElementById('partes-empty');
-  // Barra de resumen con totales del resultado filtrado
-  const totalH=list.reduce((s,p)=>s+(p.trabajos||[]).reduce((ss,t)=>ss+(parseFloat(t.horas)||0),0),0);
-  const resBar=document.getElementById('partes-resumen');
-  if(resBar) resBar.innerHTML=list.length
-    ? `<span>📋 <strong>${list.length}</strong> parte${list.length>1?'s':''}</span><span style="margin:0 8px;opacity:.3">|</span><span>⏱ Total: <strong style="color:var(--orange)">${totalH}h</strong></span>`
-    : '';
   if(!list.length){tb.innerHTML='';em.classList.remove('hidden');return;}
   em.classList.add('hidden');
   tb.innerHTML=list.map(p=>{
@@ -1983,6 +2058,11 @@ function renderProyectos(){
   gr.innerHTML=S.proyectos.map((p,i)=>{
     const h=S.partes.filter(pa=>pa.fecha.startsWith(mes)&&(pa.proyecto===p.nombre||pa.proyectoId===p.id)).reduce((s,pa)=>s+(pa.trabajos||[]).reduce((a,t)=>a+(parseFloat(t.horas)||0),0),0);
     const ep=p.estado==='Activo'?'<span class="pill g">Activo</span>':p.estado==='Pausado'?'<span class="pill o">Pausado</span>':'<span class="pill gr">Finalizado</span>';
+    // Operarios asignados a la obra
+    const opAsignados=(p.operarios||[]).map(opId=>{
+      const t=S.trabajadores.find(x=>String(x.id||x.nombre||x.name)===String(opId));
+      return t?`<span style="background:rgba(249,115,22,.1);color:var(--orange-light);border-radius:20px;padding:2px 9px;font-size:.68rem;font-weight:600">${t.nombre||t.name||''}</span>`:'';
+    }).filter(Boolean).join(' ');
     return`<div class="card" style="border-top:3px solid ${COLORS[i%COLORS.length]}">
       <div class="card-hd"><div><div class="card-title">${p.nombre}</div><div style="font-size:.73rem;color:var(--muted);margin-top:2px">📍 ${p.ubicacion||'—'}</div></div>${ep}</div>
       <div class="card-bd">
@@ -1991,6 +2071,7 @@ function renderProyectos(){
         <div style="display:flex;gap:20px;margin-bottom:12px">
           <div><div style="font-size:.7rem;color:var(--muted)">Horas mes</div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.2rem;color:${COLORS[i%COLORS.length]}">${h}h</div></div>
         </div>
+        ${opAsignados?`<div style="margin-bottom:10px"><div style="font-size:.65rem;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px">Operarios asignados</div><div style="display:flex;flex-wrap:wrap;gap:4px">${opAsignados}</div></div>`:'<div style="margin-bottom:10px;font-size:.72rem;color:var(--muted)">Sin operarios asignados — todos pueden usar esta obra</div>'}
         <div style="display:flex;gap:8px">
           <button class="btn btn-ghost btn-sm" onclick="editProy('${p.id}')">✏️ Editar</button>
           <button class="btn btn-red btn-sm" onclick="delProy('${p.id}')">🗑</button>
@@ -2044,24 +2125,73 @@ function delTrab(id){if(!confirm('¿Eliminar?'))return;S.trabajadores=S.trabajad
 // ══════════════════════════════════════════════════════
 //  CRUD PROYECTOS
 // ══════════════════════════════════════════════════════
+
+function openModalProy(editId){
+  // Reset campos
+  document.getElementById('mp-id').value = editId||'';
+  if(editId){
+    const p=S.proyectos.find(x=>x.id===editId);
+    if(!p) return;
+    document.getElementById('mp-nombre').value=p.nombre||'';
+    document.getElementById('mp-codigo').value=p.codigo||'';
+    document.getElementById('mp-cliente').value=p.cliente||'';
+    document.getElementById('mp-referencia').value=p.referencia||'';
+    document.getElementById('mp-estado').value=p.estado||'Activo';
+    document.getElementById('mp-ubicacion').value=p.ubicacion||'';
+    document.getElementById('mp-desc').value=p.desc||'';
+    poblarChipsOperarios(p.operarios||[]);
+  } else {
+    ['mp-nombre','mp-codigo','mp-cliente','mp-referencia','mp-ubicacion','mp-desc'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+    document.getElementById('mp-estado').value='Activo';
+    poblarChipsOperarios([]);
+  }
+  document.getElementById('modal-proy').classList.remove('hidden');
+}
+
+function poblarChipsOperarios(seleccionados){
+  const cont=document.getElementById('mp-operarios-list');
+  if(!cont) return;
+  if(!S.trabajadores||!S.trabajadores.length){
+    cont.innerHTML='<span style="font-size:.78rem;color:var(--muted);align-self:center">Primero da de alta trabajadores en la sección Trabajadores</span>';
+    return;
+  }
+  cont.innerHTML=S.trabajadores.map(t=>{
+    const id=t.id||t.nombre||t.name;
+    const nombre=t.nombre||t.name||'';
+    const oficio=t.oficio||t.categoria||'';
+    const isSel=seleccionados.includes(String(id));
+    return`<span class="op-chip${isSel?' sel':''}" data-id="${id}" onclick="this.classList.toggle('sel')">
+      <span class="ck">${isSel?'✓':'○'}</span> ${nombre}${oficio?' · <em style=\"font-style:normal;opacity:.6\">${oficio}</em>':''}
+    </span>`;
+  }).join('');
+  // Toggle actualiza el checkmark visual
+  cont.querySelectorAll('.op-chip').forEach(chip=>{
+    chip.addEventListener('click',()=>{
+      const ck=chip.querySelector('.ck');
+      if(ck) ck.textContent=chip.classList.contains('sel')?'✓':'○';
+    });
+  });
+}
+
 function saveProy(){
   const id=document.getElementById('mp-id').value;
   const nombre=document.getElementById('mp-nombre').value.trim();
   const codigo=document.getElementById('mp-codigo').value.trim();
+  const cliente=document.getElementById('mp-cliente')?.value.trim()||'';
+  const referencia=document.getElementById('mp-referencia')?.value.trim()||'';
   const estado=document.getElementById('mp-estado').value;
   const ubicacion=document.getElementById('mp-ubicacion').value.trim();
   const desc=document.getElementById('mp-desc').value.trim();
+  // Recoger operarios seleccionados
+  const opChips=[...document.querySelectorAll('#mp-operarios-list .op-chip.sel')].map(el=>el.dataset.id);
   if(!nombre) return toast('El nombre es obligatorio','error');
-  if(id){const p=S.proyectos.find(p=>p.id===id);if(p){p.nombre=nombre;p.codigo=codigo;p.estado=estado;p.ubicacion=ubicacion;p.desc=desc;}}
-  else S.proyectos.push({id:uid(),nombre,codigo,estado,ubicacion,desc});
-  save();closeModal('modal-proy');renderProyectos();fillProySelect();toast('Guardado ✓','success');
+  const datos={nombre,codigo,cliente,referencia,estado,ubicacion,desc,operarios:opChips};
+  if(id){const p=S.proyectos.find(p=>p.id===id);if(p)Object.assign(p,datos);}
+  else S.proyectos.push({id:uid(),...datos});
+  save();closeModal('modal-proy');renderProyectos();fillProySelect();fillObraSelector();toast('Guardado ✓','success');
 }
 function editProy(id){
-  const p=S.proyectos.find(p=>p.id===id);if(!p)return;
-  document.getElementById('mp-id').value=p.id;document.getElementById('mp-nombre').value=p.nombre;
-  document.getElementById('mp-codigo').value=p.codigo||'';document.getElementById('mp-estado').value=p.estado;
-  document.getElementById('mp-ubicacion').value=p.ubicacion||'';document.getElementById('mp-desc').value=p.desc||'';
-  openModal('modal-proy');
+  openModalProy(id);
 }
 function delProy(id){if(!confirm('¿Eliminar?'))return;S.proyectos=S.proyectos.filter(p=>p.id!==id);save();renderProyectos();toast('Eliminado','error');}
 
@@ -2292,6 +2422,16 @@ async function enviarEmail(){
 .hd p{margin:4px 0 0;font-size:.85rem;opacity:.85}
 .bd{padding:24px 28px;color:#333;font-size:.92rem;line-height:1.7}
 .ft{background:#f4f4f4;padding:14px 28px;text-align:center;font-size:.78rem;color:#888}
+
+/* Chips operarios asignados a obra */
+.op-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:.75rem;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:var(--dark3);color:var(--muted);transition:.15s;user-select:none}
+.op-chip:hover{border-color:var(--orange2);color:var(--text)}
+.op-chip.sel{background:rgba(249,115,22,.15);border-color:var(--orange2);color:var(--orange-light)}
+.op-chip .ck{font-size:.8rem}
+/* Selector de obra en nuevo parte */
+.obra-select-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.obra-select-card select{flex:1;min-width:200px}
+.obra-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:6px;background:rgba(249,115,22,.12);color:var(--orange-light);font-size:.72rem;font-weight:600}
 </style></head><body><div class="wrap">
 <div class="hd"><h1>📋 Parte de Jornales</h1><p>${empresa}</p></div>
 <div class="bd"><p>${msgHtml}</p></div>
