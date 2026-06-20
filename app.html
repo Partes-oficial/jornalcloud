@@ -2160,8 +2160,9 @@ function poblarChipsOperarios(seleccionados){
     const nombre=t.nombre||t.name||'';
     const oficio=t.oficio||t.categoria||'';
     const isSel=seleccionados.includes(String(id));
-    return`<span class="op-chip${isSel?' sel':''}" data-id="${id}" onclick="this.classList.toggle('sel')">
-      <span class="ck">${isSel?'✓':'○'}</span> ${nombre}${oficio?' · <em style=\"font-style:normal;opacity:.6\">${oficio}</em>':''}
+    const oficioHtml = oficio ? ` · <em style="font-style:normal;opacity:.6">${oficio}</em>` : '';
+    return`<span class="op-chip${isSel?' sel':''}" data-id="${id}" onclick="this.classList.toggle('sel');this.querySelector('.ck').textContent=this.classList.contains('sel')?'✓':'○'">
+      <span class="ck">${isSel?'✓':'○'}</span> ${nombre}${oficioHtml}
     </span>`;
   }).join('');
   // Toggle actualiza el checkmark visual
