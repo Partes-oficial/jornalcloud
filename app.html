@@ -73,6 +73,29 @@ function guardarAsignacionObras(){
   );
 }
 
+
+// Abrir modal de nuevo trabajador limpio con email del admin
+function abrirNuevoTrab(){
+  // Limpiar todos los campos
+  ['mt-id','mt-nombre','mt-apellidos','mt-oficio','mt-nif','mt-tel','mt-tarifa','mt-notas','mt-username','mt-pass'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.value='';
+  });
+  document.getElementById('mt-estado').value='Activo';
+  // Autorrellenar email con el del admin
+  const emailEl=document.getElementById('mt-email');
+  if(emailEl) emailEl.value=S.user?.email||'';
+  // Limpiar estado de acceso
+  const stEl=document.getElementById('mt-acceso-status');
+  if(stEl){ stEl.style.display='none'; stEl.innerHTML=''; }
+  const htEl=document.getElementById('mt-pass-hint');
+  if(htEl) htEl.textContent='(mín. 6 caracteres)';
+  // Actualizar título del modal
+  const titleEl=document.querySelector('#modal-trab .modal-title');
+  if(titleEl) titleEl.textContent='👷 Nuevo trabajador';
+  openModal('modal-trab');
+}
+
 </script>
 <style>
 :root{
@@ -439,11 +462,11 @@ textarea.form-input{resize:vertical;min-height:70px}
             <div class="form-row c2" style="margin-top:12px">
               <div class="form-group" style="margin:0">
                 <label class="form-label">CLIENTE</label>
-                <input type="text" class="form-input" id="p-cliente" placeholder="Se rellena automático" list="dl-clientes" autocomplete="off">
+                <input type="text" class="form-input" id="p-cliente" placeholder="Se rellena al seleccionar obra" list="dl-clientes" autocomplete="off">
               </div>
               <div class="form-group" style="margin:0">
                 <label class="form-label">REFERENCIA</label>
-                <input type="text" class="form-input" id="p-referencia" placeholder="Se rellena automático" list="dl-referencias" autocomplete="off">
+                <input type="text" class="form-input" id="p-referencia" placeholder="Se rellena al seleccionar obra" list="dl-referencias" autocomplete="off">
               </div>
             </div>
           </div>
@@ -552,7 +575,7 @@ textarea.form-input{resize:vertical;min-height:70px}
     <!-- ── TRABAJADORES ── -->
     <div id="page-trabajadores" class="page">
       <div class="topbar"><div class="topbar-title">👷 Trabajadores</div>
-        <div class="topbar-actions"><button class="btn btn-orange" onclick="openModal('modal-trab')">+ Agregar</button></div>
+        <div class="topbar-actions"><button class="btn btn-orange" onclick="abrirNuevoTrab()">+ Agregar</button></div>
       </div>
       <div class="search-bar"><span>🔍</span><input id="search-t" placeholder="Buscar trabajador..." oninput="renderTrabajadores()"></div>
       <div class="card"><div class="tbl-wrap">
@@ -774,11 +797,6 @@ textarea.form-input{resize:vertical;min-height:70px}
         <div class="form-group" style="margin:0"><label class="form-label">NIF / DNI</label><input type="text" class="form-input" id="mt-nif" placeholder="12345678A"></div>
       </div>
       <div class="form-row c2" style="margin-top:12px">
-        <div class="form-group" style="margin:0"><label class="form-label">TELÉFONO</label><input type="text" class="form-input" id="mt-tel" placeholder="+34 600 000 000"></div>
-        <div class="form-group" style="margin:0"><label class="form-label">EMAIL</label><input type="email" class="form-input" id="mt-email" placeholder="juan@empresa.com"></div>
-      </div>
-      <div class="form-row c2" style="margin-top:12px">
-        <div class="form-group" style="margin:0"><label class="form-label">TARIFA €/HORA</label><input type="number" class="form-input" id="mt-tarifa" placeholder="15.00" step="0.5" min="0"></div>
         <div class="form-group" style="margin:0"><label class="form-label">ESTADO</label>
           <select class="form-select" id="mt-estado">
             <option value="Activo">Activo</option>
@@ -1629,37 +1647,35 @@ function guardarEdicionParte(){
 
 function onObraSelChange(obraId){
   const inp=document.getElementById('p-proyecto');
+  const clienteEl=document.getElementById('p-cliente');
+  const refEl=document.getElementById('p-referencia');
   if(!obraId){
-    // Sin obra guardada: mostrar input libre
     if(inp) inp.style.display='';
-    document.getElementById('p-cliente').value='';
-    document.getElementById('p-referencia').value='';
-    // Restaurar todos los operarios
-    if(document.getElementById('trab-rows')) {
-      document.getElementById('trab-rows').innerHTML='';
-      trabRowCount=0;
-      addTrabRow();
-    }
+    if(clienteEl) clienteEl.value='';
+    if(refEl) refEl.value='';
+    const tRows=document.getElementById('trab-rows');
+    if(tRows){tRows.innerHTML='';trabRowCount=0;addTrabRow();}
     return;
   }
   if(inp) inp.style.display='none';
   const obra=S.proyectos.find(p=>p.id===obraId);
   if(!obra) return;
-  // Autorrellenar proyecto en el campo hidden (para compatibilidad)
-  if(inp) inp.value=obra.nombre;
-  // Autorrellenar cliente y referencia
-  if(obra.cliente) document.getElementById('p-cliente').value=obra.cliente;
-  if(obra.referencia) document.getElementById('p-referencia').value=obra.referencia;
-  // Filtrar operarios asignados a esta obra
+  // Autorrellenar nombre de obra en campo oculto
+  if(inp) inp.value=obra.nombre||'';
+  // Autorrellenar cliente — usar lo que haya guardado
+  if(clienteEl) clienteEl.value=obra.cliente||'';
+  // Autorrellenar referencia — usar codigo si no hay referencia
+  if(refEl) refEl.value=obra.referencia||obra.codigo||'';
+  // Filtrar trabajadores asignados a esta obra
   const trabRows=document.getElementById('trab-rows');
   if(trabRows){
     trabRows.innerHTML='';
     trabRowCount=0;
-    if(obra.operarios&&obra.operarios.length){
-      // Solo los operarios asignados
-      obra.operarios.forEach(opId=>{
+    const asignados=obra.usuariosAsignados||obra.operarios||[];
+    if(asignados.length){
+      asignados.forEach(opId=>{
         const t=S.trabajadores.find(x=>String(x.id||x.nombre||x.name)===String(opId));
-        if(t) addTrabRow('',t.nombre||t.name||'','' );
+        if(t) addTrabRow('',t.nombre||t.name||'','');
       });
     } else {
       addTrabRow();
@@ -1777,7 +1793,8 @@ function fillObraSelector(){
     if(inp) inp.style.display= esAdmin ? '' : 'none';
   } else {
     activas.forEach(p=>{
-      sel.innerHTML+=`<option value="${p.id}" ${p.id===cur?'selected':''}>${p.nombre}${p.codigo?' ['+p.codigo+']':''}${p.cliente?' — '+p.cliente:''}</option>`;
+      const obraLabel = p.nombre + (p.codigo?' ['+p.codigo+']':'') + (p.cliente?' · '+p.cliente:'');
+      sel.innerHTML+=`<option value="${p.id}" ${p.id===cur?'selected':''}>${obraLabel}</option>`;
     });
     if(inp) inp.style.display='none';
     if(activas.length===1){
@@ -2355,6 +2372,9 @@ async function saveTrab(){
 function editTrab(id){
   const t=S.trabajadores.find(t=>t.id===id);if(!t)return;
   document.getElementById('mt-id').value=t.id;
+  // Email: usar el del trabajador o el del admin como fallback
+  const emailEl=document.getElementById('mt-email');
+  if(emailEl) emailEl.value=t.email||(S.user?.email||'');
   // Cargar username si tiene acceso
   const unEl=document.getElementById('mt-username');
   const pwEl=document.getElementById('mt-pass');
