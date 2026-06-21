@@ -96,6 +96,23 @@ function abrirNuevoTrab(){
   openModal('modal-trab');
 }
 
+
+// Botón X para limpiar campos
+function clearField(id){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.value = '';
+  el.focus();
+  // Ocultar el botón X
+  const btn = el.parentElement?.querySelector('.field-clear-btn');
+  if(btn) btn.style.display = 'none';
+}
+
+function toggleClearBtn(input){
+  const btn = input.parentElement?.querySelector('.field-clear-btn');
+  if(btn) btn.style.display = input.value ? 'block' : 'none';
+}
+
 </script>
 <style>
 :root{
@@ -323,6 +340,14 @@ textarea.form-input{resize:vertical;min-height:70px}
 .obra-assign-chip .oa-ck{width:20px;height:20px;border-radius:5px;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0;transition:.15s}
 .obra-assign-chip.sel .oa-ck{background:var(--orange2);border-color:var(--orange2);color:#fff}
 
+
+/* Campo con botón X para limpiar */
+.field-clearable{position:relative;display:flex;align-items:center}
+.field-clearable input{width:100%;padding-right:32px}
+.field-clear-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:2px 4px;border-radius:4px;display:none;transition:.15s}
+.field-clear-btn:hover{color:var(--red);background:rgba(239,68,68,.1)}
+.field-clearable input:not(:placeholder-shown) ~ .field-clear-btn{display:block}
+
 </style>
 </head>
 <body>
@@ -462,11 +487,17 @@ textarea.form-input{resize:vertical;min-height:70px}
             <div class="form-row c2" style="margin-top:12px">
               <div class="form-group" style="margin:0">
                 <label class="form-label">CLIENTE</label>
-                <input type="text" class="form-input" id="p-cliente" placeholder="Se rellena al seleccionar obra" list="dl-clientes" autocomplete="off">
+                <div class="field-clearable">
+                  <input type="text" class="form-input" id="p-cliente" placeholder="Se rellena al seleccionar obra" list="dl-clientes" autocomplete="off" oninput="toggleClearBtn(this)">
+                  <button type="button" class="field-clear-btn" onclick="clearField('p-cliente')" title="Borrar">✕</button>
+                </div>
               </div>
               <div class="form-group" style="margin:0">
                 <label class="form-label">REFERENCIA</label>
-                <input type="text" class="form-input" id="p-referencia" placeholder="Se rellena al seleccionar obra" list="dl-referencias" autocomplete="off">
+                <div class="field-clearable">
+                  <input type="text" class="form-input" id="p-referencia" placeholder="Se rellena al seleccionar obra" list="dl-referencias" autocomplete="off" oninput="toggleClearBtn(this)">
+                  <button type="button" class="field-clear-btn" onclick="clearField('p-referencia')" title="Borrar">✕</button>
+                </div>
               </div>
             </div>
           </div>
@@ -1663,9 +1694,9 @@ function onObraSelChange(obraId){
   // Autorrellenar nombre de obra en campo oculto
   if(inp) inp.value=obra.nombre||'';
   // Autorrellenar cliente — usar lo que haya guardado
-  if(clienteEl) clienteEl.value=obra.cliente||'';
+  if(clienteEl){ clienteEl.value=obra.cliente||''; toggleClearBtn(clienteEl); }
   // Autorrellenar referencia — usar codigo si no hay referencia
-  if(refEl) refEl.value=obra.referencia||obra.codigo||'';
+  if(refEl){ refEl.value=obra.referencia||obra.codigo||''; toggleClearBtn(refEl); }
   // Filtrar trabajadores asignados a esta obra
   const trabRows=document.getElementById('trab-rows');
   if(trabRows){
