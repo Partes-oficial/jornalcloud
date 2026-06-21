@@ -832,6 +832,8 @@ const _fbCfg = {
 let _db = null;
 async function initFirebase(){
   if(_db) return _db;
+  // Timeout de 8s — si Firebase no carga, lanzar error claro
+  const fbTimeout = new Promise((_,rej)=>setTimeout(()=>rej(new Error('Sin conexión. Comprueba tu internet e inténtalo de nuevo.')),8000));
   const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
   const { getFirestore, doc, getDoc, setDoc, collection, getDocs, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
   const app = initializeApp(_fbCfg);
@@ -981,25 +983,41 @@ async function doLogin(){
   const p=document.getElementById('li-pass').value;
   if(!e||!p) return toast('Completa todos los campos','error');
   const btn=document.querySelector('#login-admin-form .btn-full');
-  btn.textContent='⏳ Entrando...'; btn.disabled=true;
+  btn.textContent='⏳ Conectando...'; btn.disabled=true;
+  // Timeout de 10 segundos
+  const timer = setTimeout(()=>{
+    btn.textContent='Entrar al sistema'; btn.disabled=false;
+    toast('⏱ Tiempo de espera agotado. Comprueba tu conexión a internet e inténtalo de nuevo.','error');
+  }, 10000);
   try{
+    btn.textContent='⏳ Cargando...';
     const db = await initFirebase();
+    btn.textContent='⏳ Verificando...';
     const snap = await window._fsGet(window._fsDoc(db,'jc_accounts',e.replace(/\./g,'_')));
+    clearTimeout(timer);
     if(snap.exists()){
       const u = snap.data();
       if(u.pass !== p){ toast('Correo o contraseña incorrectos','error'); return; }
       if(u.estado==='suspendido'){ toast('Tu cuenta está suspendida.','error'); return; }
-      // Asegurar que tiene rol admin
       if(!u.rol || u.rol==='user') u.rol='admin';
-      // Guardar correo del admin en este dispositivo para precargarlo en login de trabajador
       localStorage.setItem('jc_last_admin_email', e);
       S.user=u; S.user._adminEmail=e; await enterApp();
     } else {
       toast('No existe cuenta con ese correo. Regístrate primero.','error');
     }
   }catch(err){
-    toast('Error de conexión: '+err.message,'error');
+    clearTimeout(timer);
+    // Mostrar error detallado para diagnosticar
+    const msg = err.message||String(err);
+    if(msg.includes('permission') || msg.includes('insufficient')){
+      toast('❌ Error de permisos en base de datos. Contacta al administrador.','error');
+    } else if(msg.includes('network') || msg.includes('fetch') || msg.includes('Failed')){
+      toast('❌ Sin conexión a internet. Comprueba tu red e inténtalo de nuevo.','error');
+    } else {
+      toast('❌ Error: '+msg,'error');
+    }
   }finally{
+    clearTimeout(timer);
     btn.textContent='Entrar al sistema'; btn.disabled=false;
   }
 }
@@ -1011,23 +1029,37 @@ async function doLoginUser(){
   const pass       = document.getElementById('lu-pass').value;
   if(!adminEmail||!username||!pass) return toast('Completa todos los campos','error');
   const btn=document.querySelector('#login-user-form .btn-full');
-  btn.textContent='⏳ Entrando...'; btn.disabled=true;
+  btn.textContent='⏳ Conectando...'; btn.disabled=true;
+  const timer = setTimeout(()=>{
+    btn.textContent='Entrar a mi espacio'; btn.disabled=false;
+    toast('⏱ Tiempo de espera agotado. Comprueba tu conexión e inténtalo de nuevo.','error');
+  }, 10000);
   try{
+    btn.textContent='⏳ Cargando...';
     const db = await initFirebase();
-    // Buscar en la subcolección de users del admin: jc_accounts/{adminKey}/users/{username}
+    btn.textContent='⏳ Verificando...';
     const adminKey = adminEmail.replace(/\./g,'_');
     const userSnap = await window._fsGet(window._fsDoc(db,`jc_accounts/${adminKey}/users`,username));
-    if(!userSnap.exists()){ toast('Usuario no encontrado','error'); return; }
+    clearTimeout(timer);
+    if(!userSnap.exists()){ toast('Usuario "@'+username+'" no encontrado. Comprueba el nombre de usuario.','error'); return; }
     const u = userSnap.data();
-    if(u.pass !== pass){ toast('Contraseña incorrecta','error'); return; }
+    if(u.pass !== pass){ toast('Contraseña incorrecta.','error'); return; }
     if(u.estado==='inactivo'){ toast('Tu cuenta está inactiva. Contacta a tu jefe.','error'); return; }
-    // El user trabaja en el espacio del admin
-    S.user = {...u, rol:'user', _adminEmail: adminEmail, _adminKey: adminKey};
+    S.user = {...u, rol:'user', username, _adminEmail: adminEmail, _adminKey: adminKey};
     await enterApp();
     toast(`Bienvenido, ${u.name||username} 👷`,'success');
   }catch(err){
-    toast('Error: '+err.message,'error');
+    clearTimeout(timer);
+    const msg = err.message||String(err);
+    if(msg.includes('permission') || msg.includes('insufficient')){
+      toast('❌ Error de permisos. El administrador debe revisar la configuración.','error');
+    } else if(msg.includes('network') || msg.includes('fetch') || msg.includes('Failed')){
+      toast('❌ Sin conexión a internet. Comprueba tu red e inténtalo de nuevo.','error');
+    } else {
+      toast('❌ Error: '+msg,'error');
+    }
   }finally{
+    clearTimeout(timer);
     btn.textContent='Entrar a mi espacio'; btn.disabled=false;
   }
 }
