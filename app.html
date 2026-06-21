@@ -1601,7 +1601,7 @@ async function abrirAsignarUsers(obraId, obraNombre){
     snap.forEach(d => users.push({...d.data(), _id: d.id}));
 
     if(!users.length){
-      listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:.82rem">No tienes trabajadores creados aún.<br><a href="#" onclick="goTo('mis-usuarios');closeModal('modal-asignar-users')" style="color:var(--orange)">Crea un trabajador aquí →</a></div>';
+      listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:.82rem">No tienes trabajadores crea dos a&uacute;n.<br><a href="#" onclick="goTo(\'mis-usuarios\');closeModal(\'modal-asignar-users\')" style="color:var(--orange)">Crea un trabajador aqu&iacute; &rarr;</a></div>';
       return;
     }
 
